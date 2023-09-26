@@ -2,9 +2,6 @@ import pandas as pd
 import ta
 
 
-class IndicatorNotFoundError(Exception):
-    pass
-
 
 class TrendIndicator:
     def __init__(self, indicator, window_short=None, window_long=None):
