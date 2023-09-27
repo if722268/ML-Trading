@@ -15,7 +15,7 @@ df_results = pd.DataFrame({'gain': [], 'optimal_sl': [], 'optimal_tp': []})
 # positions = []
 # operations = []
 
-def strategies_design(strat, data, window1, window2, window_long, window_short, df, df_buy, df_sell):
+def strategies_design(strat, data, df, df_buy, df_sell, *args): # window1, window2, window_long, window_short, window,
 
     if 'MACD':
         short_macd = ta.trend.MACD(data.Close)
@@ -26,12 +26,13 @@ def strategies_design(strat, data, window1, window2, window_long, window_short, 
         df_sell['MACD_sell_trade_signal'] = df.short_macd > df.long_macd  # buy trade signal
 
     if 'SMA' in strat:
-        short_sma = ta.trend.SMAIndicator(data.Close, window=window_short)
-        long_sma = ta.trend.SMAIndicator(data.Close, window=window_long)
+        # print(args[3], args[2])
+        short_sma = ta.trend.SMAIndicator(data.Close, window=int(args[3]))
+        long_sma = ta.trend.SMAIndicator(data.Close, window=int(args[2]))
         df['short_sma'] = short_sma.sma_indicator()
         df['long_sma'] = long_sma.sma_indicator()
-        df_buy['SMA_buy_trade_signal'] = data.short_sma < data.long_sma
-        df_sell['SMA_sell_trade_signal'] = data.short_sma > data.long_sma
+        df_buy['SMA_buy_trade_signal'] = df.short_sma < df.long_sma
+        df_sell['SMA_sell_trade_signal'] = df.short_sma > df.long_sma
 
     if 'RSII' in strat:
         rsii = ta.momentum.RSIIndicator(data.Close)
@@ -42,18 +43,20 @@ def strategies_design(strat, data, window1, window2, window_long, window_short, 
         ichimoku = ta.trend.IchimokuIndicator(data.High, data.Low)
         df['tenkan_sen'] = ichimoku.ichimoku_a()
         df['kijun_sen'] = ichimoku.ichimoku_b()
-        df_buy['ichimoku_buy_trade_signal'] = data.Close > data.tenkan_sen
-        df_sell['ichimoku_sell_trade_signal'] = data.Close < data.kijun_sen
+        df_buy['ichimoku_buy_trade_signal'] = data.Close > df.tenkan_sen
+        df_sell['ichimoku_sell_trade_signal'] = data.Close < df.kijun_sen
 
 
     if 'ROC' in strat:
-        roc = ta.momentum.ROCIndicator(data.Close, window=window_short)
+        roc = ta.momentum.ROCIndicator(data.Close, window=int(args[4]))
         df_buy['ROC_buy_trade_signal'] = roc.roc() > 0
         df_sell['ROC_sell_trade_signal'] = roc.roc() < 0
 
     if 'awesome_oscillator' in strat:
-        awesome_oscillator = ta.momentum.AwesomeOscillatorIndicator(data.High, data.Low, window1=window1, window2=window2)
-        df['awesome_oscillator'] = awesome_oscillator.ao()
+        awesome_oscillatorr = ta.momentum.AwesomeOscillatorIndicator(data.High, data.Low, window1=int(args[0]), window2=int(args[1]))
+        # print(dir(awesome_oscillator))
+        df['awesome_oscillator'] = awesome_oscillatorr.awesome_oscillator()
+        print('cool')
         df_buy['awesome_oscillator_buy_trade_signal'] = df.awesome_oscillator > 0
         df_sell['awesome_oscillator_sell_trade_signal'] = df.awesome_oscillator < 0
 
@@ -65,13 +68,35 @@ def backtest(x):
     COMISSION = 0.0025
     positions = []
 
-    window1, window2, window_long, window_short, STOP_LOSS, TAKE_PROFIT = x
+    if 'SMA' in strat and 'ROC' in strat and 'awesome_oscillator' in strat:
+        window1, window2, window_long, window_short, window, STOP_LOSS, TAKE_PROFIT = x
+        strategies_design(strat, data, df, df_buy, df_sell, window1, window2, window_long, window_short, window)
+    elif 'SMA' in strat and 'ROC' in strat:
+        window_long, window_short, window, STOP_LOSS, TAKE_PROFIT = x
+        strategies_design(strat, data, df, df_buy, df_sell, None, None, window_long, window_short, window)
+    elif 'SMA' in strat and 'awesome_oscillator' in strat:
+        window1, window2, window_long, window_short, STOP_LOSS, TAKE_PROFIT = x
+        strategies_design(strat, data, df, df_buy, df_sell, window1, window2, window_long, window_short, None)
+    elif 'ROC' in strat and 'awesome_oscillator' in strat:
+        window1, window2, window, STOP_LOSS, TAKE_PROFIT = x
+        strategies_design(strat, data, df, df_buy, df_sell, window1, window2, None, None, window)
+    elif 'awesome_oscillator' in strat:
+        window1, window2, STOP_LOSS, TAKE_PROFIT = x
+        strategies_design(strat, data, df, df_buy, df_sell, window1, window2, None, None, None)
+    elif 'ROC' in strat:
+        window, STOP_LOSS, TAKE_PROFIT = x
+        strategies_design(strat, data, df, df_buy, df_sell, None, None, None, None, window)
+    elif 'SMA' in strat:
+        window_long, window_short, STOP_LOSS, TAKE_PROFIT = x
+        strategies_design(strat, data, df, df_buy, df_sell, None, None, window_long, window_short, None)
+    else:
+        STOP_LOSS, TAKE_PROFIT = x
+        strategies_design(strat, data, df, df_buy, df_sell, None, None, None, None, None)
 
-    strategies_design(strat, data, window1, window2, window_long, window_short, df, df_buy, df_sell)
-
-    for i, row, i_buy, row_buy, i_sell, row_sell in zip(data.iterrows(), df_buy.iterrows(), df_sell.iterrows()):
+    for row, row_buy, row_sell in zip(data.iterrows(), df_buy.iterrows(), df_sell.iterrows()):
         # Close positions
-        price = row.Close
+        # print(row[1].Close)
+        price = row[1].Close
         for position in positions:
             j = positions.index(position)
             if position.is_active:
@@ -110,15 +135,17 @@ def backtest(x):
                     position.sold_at = price
                     print(f'Closing winning short position bought at {position.bought_at}, sold at {position.sold_at}')
         # buy
-        if row_buy.MACD_buy_trade_signal and row_buy.SMA_buy_trade_signal and row_buy.RSII_buy_trade_signal and row_buy.ichimoku_buy_trade_signal and row_buy.awesome_oscillator_buy_trade_signal and row_buy.ROC_buy_trade_signal:
-            if cash < row.Close * (1 + COMISSION):
+        # print(row_buy[1].sum(), len(row_buy[1]))
+        # if row_buy[1].MACD_buy_trade_signal and row_buy[1].SMA_buy_trade_signal and row_buy[1].RSII_buy_trade_signal and row_buy[1].ichimoku_buy_trade_signal and row_buy[1].awesome_oscillator_buy_trade_signal and row_buy[1].ROC_buy_trade_signal:
+        if row_buy[1].sum() == len(df_buy.columns):
+            if cash < row[1].Close * (1 + COMISSION):
                 continue
-            cash -= row.Close * (1 + COMISSION)
+            cash -= row[1].Close * (1 + COMISSION)
 
-            order = Order(timestamp=row.Timestamp,
-                          bought_at=row.Close,
-                          stop_loss=row.Close * (1 - STOP_LOSS),
-                          take_profit=row.Close * (1 + TAKE_PROFIT),
+            order = Order(timestamp=row[1].Timestamp,
+                          bought_at=row[1].Close,
+                          stop_loss=row[1].Close * (1 - STOP_LOSS),
+                          take_profit=row[1].Close * (1 + TAKE_PROFIT),
                           order_type='LONG'
                           )
 
@@ -126,19 +153,20 @@ def backtest(x):
 
         # Sell
         # close positons
-        price = row.Close
+        price = row[1].Close
 
         # do we have money
         # Buy
-        if row_sell.MACD_sell_trade_signal and row_sell.SMA_sell_trade_signal and row_sell.RSII_sell_trade_signal and row_sell.ichimoku_sell_trade_signal and row_sell.awesome_oscillator_sell_trade_signal and row_sell.ROC_sell_trade_signal:
-            if cash < row.Close * (1 + COMISSION):
+        # if row_sell[1].MACD_sell_trade_signal and row_sell[1].SMA_sell_trade_signal and row_sell[1].RSII_sell_trade_signal and row_sell[1].ichimoku_sell_trade_signal and row_sell[1].awesome_oscillator_sell_trade_signal and row_sell[1].ROC_sell_trade_signal:
+        if row_sell[1].sum() == len(df_sell.columns):
+            if cash < row[1].Close * (1 + COMISSION):
                 continue
-            cash += row.Close * (1 - COMISSION)
+            cash += row[1].Close * (1 - COMISSION)
 
-            order = Order(timestamp=row.Timestamp,
-                          bought_at=row.Close,
-                          stop_loss=row.Close * (1 + STOP_LOSS),
-                          take_profit=row.Close * (1 - TAKE_PROFIT),
+            order = Order(timestamp=row[1].Timestamp,
+                          bought_at=row[1].Close,
+                          stop_loss=row[1].Close * (1 + STOP_LOSS),
+                          take_profit=row[1].Close * (1 - TAKE_PROFIT),
                           order_type='SHORT'
                           )
             positions.append(order)
@@ -147,36 +175,88 @@ def backtest(x):
 
     for position in positions:
         if position.order_type == 'LONG' and position.is_active == True:
-            cash_still_open_positions.append(position)
+            cash_still_open_positions.append(data.Close.iloc[-1])
         if position.order_type == 'SHORT' and position.is_active == True:
-            cash_still_open_positions.append(-position)
+            cash_still_open_positions.append(-data.Close.iloc[-1])
 
     return -sum(cash_still_open_positions) - cash
 
 
-a = ['ichimoku_a', 'SMA', 'MACD', 'RSI', 'ROC', 'awesome_oscillator']
+a = ['ichimoku', 'SMA', 'MACD', 'RSII', 'ROC', 'awesome_oscillator']
 
 for j in range(len(a)):
     strategies = [i for i in combinations(a, j)]
     if strategies != [()]:
         for strat in strategies:
-            strategies_design(strat, data)
-            x0 = np.array([0.5, 0.6])  # Valores iniciales arbitrarios
-            # Definir límites de las variables
-            limite_inferior = 0.0025
-            limite_superior = 0.30
+            # print(strat)
+            # strategies_design(strat, data)
 
-            # Crear una tupla de límites para cada variable
-            limites = [(limite_inferior, limite_superior)] * len(x0)
+            if 'SMA' in strat and 'ROC' in strat and 'awesome_oscillator' in strat:
+                x0 = np.array([5, 15, 15, 5, 10, 0.15, 0.15])  # Valores iniciales arbitrarios
+                # window1, window2, window_long, window_short, STOP_LOSS, TAKE_PROFIT = x
+                limites = [(2, 10), (11, 30), (11, 30), (2, 10), (3, 30), (0.0025, 0.30), (0.0025, 0.30)]
+                result = minimize(backtest, x0, bounds=limites)
+                optimal_gain = -result.fun  # Ganancia óptima
+                df_trash = pd.DataFrame({'gain': [optimal_gain], 'strategy': [strat], 'optimal_params': [result.x]})
+                df_results = pd.concat([df_results, df_trash], ignore_index=True)
 
-            # Optimización
-            result = minimize(backtest, x0, bounds=limites)
+            elif 'SMA' in strat and 'ROC' in strat:
+                x0 = np.array([15, 5, 10, 0.15, 0.15])  # Valores iniciales arbitrarios`
+                # window1, window2, window_long, window_short, STOP_LOSS, TAKE_PROFIT = x
+                limites = [(11, 30), (2, 10), (3, 30), (0.0025, 0.30), (0.0025, 0.30)]
+                result = minimize(backtest, x0, bounds=limites)
+                optimal_gain = -result.fun  # Ganancia óptima
+                df_trash = pd.DataFrame({'gain': [optimal_gain], 'strategy': [strat], 'optimal_params': [result.x]})
+                df_results = pd.concat([df_results, df_trash], ignore_index=True)
 
-            # Resultados óptimos
-            optimal_sl, optimal_tp = result.x
-            optimal_gain = -result.fun  # Ganancia óptima
-            df_trash = pd.DataFrame({'gain': [optimal_gain], 'optimal_sl': [optimal_sl], 'optimal_tp': [optimal_tp]})
-
-            df_results.concat([df_trash], ignore_index=True)
+            elif 'SMA' in strat and 'awesome_oscillator' in strat:
+                x0 = np.array([5, 15, 15, 5, 0.15, 0.15])  # Valores iniciales arbitrarios
+                # window1, window2, window_long, window_short, STOP_LOSS, TAKE_PROFIT = x
+                limites = [(2, 10), (11, 30), (11, 30), (2, 10), (0.0025, 0.30), (0.0025, 0.30)]
+                result = minimize(backtest, x0, bounds=limites)
+                optimal_gain = -result.fun  # Ganancia óptima
+                df_trash = pd.DataFrame({'gain': [optimal_gain], 'strategy': [strat], 'optimal_params': [result.x]})
+                df_results = pd.concat([df_results, df_trash], ignore_index=True)
+            elif 'ROC' in strat and 'awesome_oscillator' in strat:
+                x0 = np.array([5, 15, 10, 0.15, 0.15])  # Valores iniciales arbitrarios
+                # window1, window2, window_long, window_short, STOP_LOSS, TAKE_PROFIT = x
+                limites = [(2, 10), (11, 30), (2, 30), (0.0025, 0.30), (0.0025, 0.30)]
+                result = minimize(backtest, x0, bounds=limites)
+                optimal_gain = -result.fun  # Ganancia óptima
+                df_trash = pd.DataFrame({'gain': [optimal_gain], 'strategy': [strat], 'optimal_params': [result.x]})
+                df_results = pd.concat([df_results, df_trash], ignore_index=True)
+            elif 'awesome_oscillator' in strat:
+                x0 = np.array([5, 15, 0.15, 0.15])  # Valores iniciales arbitrarios
+                # window1, window2, window_long, window_short, STOP_LOSS, TAKE_PROFIT = x
+                limites = [(2, 10), (11, 30), (0.0025, 0.30), (0.0025, 0.30)]
+                result = minimize(backtest, x0, bounds=limites)
+                optimal_gain = -result.fun  # Ganancia óptima
+                df_trash = pd.DataFrame({'gain': [optimal_gain], 'strategy': [strat], 'optimal_params': [result.x]})
+                df_results = pd.concat([df_results, df_trash], ignore_index=True)
+            elif 'ROC' in strat:
+                x0 = np.array([10, 0.15, 0.15])  # Valores iniciales arbitrarios
+                # window1, window2, window_long, window_short, STOP_LOSS, TAKE_PROFIT = x
+                limites = [(2, 30), (0.0025, 0.30), (0.0025, 0.30)]
+                result = minimize(backtest, x0, bounds=limites)
+                optimal_gain = -result.fun  # Ganancia óptima
+                df_trash = pd.DataFrame({'gain': [optimal_gain], 'strategy': [strat], 'optimal_params': [result.x]})
+                df_results = pd.concat([df_results, df_trash], ignore_index=True)
+            elif 'SMA' in strat:
+                x0 = np.array([15, 5, 0.15, 0.15])  # Valores iniciales arbitrarios
+                # window1, window2, window_long, window_short, STOP_LOSS, TAKE_PROFIT = x
+                limites = [(11, 30), (2, 10), (0.0025, 0.30), (0.0025, 0.30)]
+                result = minimize(backtest, x0, bounds=limites)
+                optimal_gain = -result.fun  # Ganancia óptima
+                df_trash = pd.DataFrame({'gain': [optimal_gain], 'strategy': [strat], 'optimal_params': [result.x]})
+                df_results = pd.concat([df_results, df_trash], ignore_index=True)
+            else:
+                x0 = np.array([0.15, 0.15])  # Valores iniciales arbitrarios
+                # window1, window2, window_long, window_short, STOP_LOSS, TAKE_PROFIT = x
+                limites = [(0.0025, 0.30), (0.0025, 0.30)]
+                result = minimize(backtest, x0, bounds=limites)
+                optimal_gain = -result.fun  # Ganancia óptima
+                df_trash = pd.DataFrame({'gain': [optimal_gain], 'strategy': [strat], 'optimal_params': [result.x]})
+                df_results = pd.concat([df_results, df_trash], ignore_index=True)
 
 print(df_results)
+df_results.to_csv('resultados.csv')
