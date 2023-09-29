@@ -73,7 +73,6 @@ def strategies_design(strat, data, df, df_buy, df_sell, *args):  # window1, wind
                                                                      window2=int(args[1]))
         # print(dir(awesome_oscillator))
         df['awesome_oscillator'] = awesome_oscillatorr.awesome_oscillator()
-        print('cool')
         df_buy['awesome_oscillator_buy_trade_signal'] = df.awesome_oscillator > 0
         df_sell['awesome_oscillator_sell_trade_signal'] = df.awesome_oscillator < 0
 
@@ -202,12 +201,12 @@ def backtest(x):
         if position.order_type == 'SHORT' and position.is_active == True:
             cash_still_open_positions.append(-data.Close.iloc[-1])
 
-    print(f"Finished Backtest")
     return -sum(cash_still_open_positions) - cash
 
 
 a = ['ichimoku', 'SMA', 'MACD', 'RSII', 'ROC', 'awesome_oscillator']
 
+coun = 0
 for j in range(len(a)):
     strategies = [i for i in combinations(a, j)]
     if strategies != [()]:
@@ -289,6 +288,8 @@ for j in range(len(a)):
                 optimal_gain = -result.fun  # Ganancia óptima
                 df_trash = pd.DataFrame({'gain': [optimal_gain], 'strategy': [strat], 'optimal_params': [result.x]})
                 df_results = pd.concat([df_results, df_trash], ignore_index=True)
+        coun += 1
+        print(f"Finished Backtest {coun}/64")
 
 print(df_results)
 df_results.to_csv('resultados.csv')
