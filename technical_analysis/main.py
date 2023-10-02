@@ -291,5 +291,6 @@ for j in range(len(a)):
         coun += 1
         print(f"Finished Backtest {coun}/64")
 
-print(df_results)
 df_results.to_csv('resultados.csv')
+df_results.sort_values('gain', ascending=False, inplace=True)
+print(df_results.iloc[0])
