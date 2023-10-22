@@ -1,6 +1,3 @@
-
-
-
 class IndicatorNotFoundError(Exception):
     pass
 
@@ -17,19 +14,3 @@ class Order:
 
     def __repr__(self):
         return f'{self.order_type} position - id {self.timestamp}'
-
-
-def y_generator(file):
-    file['price_in_10_days'] = file['Close'].shift(-10)
-    file.dropna(inplace=True)
-    y_target = []
-    for price_10, clos in zip(file['price_in_10_days'], file['Close']):
-        if price_10 > clos * 1.02:
-            y_target.append(1)
-        elif price_10/clos-1 < -0.02:
-            y_target.append(-1)
-        else:
-            y_target.append(0)
-
-    file['target'] = y_target
-    return file
