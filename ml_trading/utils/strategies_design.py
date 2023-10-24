@@ -1,7 +1,7 @@
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
-from ..ml_trading.hyperparam_fine_tune import LR_C, SVC_C, XGBOOST_N_EST, XGBOOST_SUBSAMPLE, XGBOOST_LOSS, XGBOOST_LEARNING_RATE
+from ml_trading.hyperparam_fine_tune import LR_C, SVC_C, XGBOOST_N_EST, XGBOOST_SUBSAMPLE, XGBOOST_LOSS, XGBOOST_LEARNING_RATE
 
 
 def strategies_design(strate, train_data, validate_data, df_buy, df_sell):

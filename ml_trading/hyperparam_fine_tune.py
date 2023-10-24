@@ -22,7 +22,7 @@ def y_generator(file):
     return file
 
 
-data = pd.read_csv('../files/aapl_5m_train.csv')
+data = pd.read_csv('./files/aapl_5m_train.csv')
 df_results = pd.DataFrame({'gain': [], 'optimal_sl': [], 'optimal_tp': []})
 
 data = y_generator(data)
