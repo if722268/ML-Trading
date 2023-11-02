@@ -1,7 +1,7 @@
 
 ## Backtesting Trading Strategies in Python
 
-
+aa
 This comprehensive report delves into the intricate process of backtesting trading strategies through the utilization of the Python programming language. Backtesting, being an integral and pivotal phase, plays a seminal role in the assessment of the efficacy and competence of trading algorithms before venturing into the unpredictable terrain of real-time markets. Within the pages of this report, we meticulously outline and elucidate a Python script meticulously engineered to orchestrate the retrospective testing of a diverse array of trading strategies, all of which are assessed against the backdrop of historical price data pertaining to the esteemed Apple Inc. (AAPL).
 
 The project, as envisioned and undertaken, carries a primary objective of scrutinizing and appraising the performance of a multitude of trading strategies. It is an endeavor focused on systematically scrutinizing and comparing these strategies, employing the rich trove of historical price data as the foundation for such assessments. The aim is to disentangle the intricate web of trading strategies and assess their respective effectiveness. In this venture, the project meticulously dissects, analyzes, and evaluates the multifaceted world of trading strategies.
