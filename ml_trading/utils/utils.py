@@ -1,6 +1,3 @@
-
-
-
 class IndicatorNotFoundError(Exception):
     pass
 
