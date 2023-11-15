@@ -1,4 +1,4 @@
-Optimizing Trading Strategies using Deep Learning Classifiers
+# Optimizing Trading Strategies using Deep Learning Classifiers
 Introduction
 This project follows a structured Python project approach to explore and optimize trading strategies using historical stock data from the aapl_5m_train.csv and aapl_5m_validation.csv datasets. The aim is to compare the effectiveness of Technical Analysis, Machine Learning (ML), and Deep Learning (DL) models in devising profitable trading strategies.
 
