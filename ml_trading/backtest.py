@@ -1,12 +1,12 @@
 import pandas as pd
-from ..utils.utils import Order
-from ..utils.training_data_generation import x_y_generator
-from ..utils.strategies_design import strategies_design
+from ml_trading.utils.utils import Order
+from ml_trading.utils.training_data_generation import x_y_generator
+from ml_trading.utils import strategies_design
 
 
 def perform():
-    data = pd.read_csv('../files/aapl_5m_train.csv')
-    data_val = pd.read_csv('../files/aapl_5m_validation.csv')
+    data = pd.read_csv('./files/aapl_5m_train.csv')
+    data_val = pd.read_csv('./files/aapl_5m_validation.csv')
     df_results = pd.DataFrame({'gain': [], 'strategy': []})
 
     data = x_y_generator(data)

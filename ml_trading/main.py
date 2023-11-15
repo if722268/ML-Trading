@@ -1,3 +1,3 @@
-from backtest import perform
+from ml_trading.backtest import perform
 
 perform()
